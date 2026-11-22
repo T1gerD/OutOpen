@@ -33,3 +33,4 @@ desktop.ini
 
 ## Installer output
 dist/
+.gh_upload.sh
