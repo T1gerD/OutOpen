@@ -1,0 +1,35 @@
+## Build output
+bin/
+obj/
+publish/
+artifacts/
+TestResults/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+## Logs / local data
+*.log
+logs/
+data/
+*.tmp
+*.bak
+
+## OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+## Local tooling
+.dotnet/
+
+## Installer output
+dist/

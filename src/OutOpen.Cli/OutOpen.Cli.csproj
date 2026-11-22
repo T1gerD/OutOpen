@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>OutOpen.Cli</RootNamespace>
+    <AssemblyName>outopen</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OutOpen.Core\OutOpen.Core.csproj" />
+  </ItemGroup>
+
+</Project>
