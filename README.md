@@ -90,16 +90,16 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/20-installer-welcome.png" alt="安装向导欢迎页"></td>
-    <td width="50%"><img src="docs/screenshots/22-installer-options.png" alt="安装向导附加选项"></td>
+    <td width="50%"><img src="docs/screenshots/20-installer-welcome.png?v=0.1.1" alt="安装向导欢迎页"></td>
+    <td width="50%"><img src="docs/screenshots/22-installer-options.png?v=0.1.1" alt="安装向导附加选项"></td>
   </tr>
   <tr>
     <td>欢迎页：品牌图标与版本</td>
     <td>附加选项：桌面快捷方式 / 开机自启动（静默）</td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/21-installer-license.png" alt="许可协议"></td>
-    <td width="50%"><img src="docs/screenshots/23-installer-finish.png" alt="完成页"></td>
+    <td width="50%"><img src="docs/screenshots/21-installer-license.png?v=0.1.1" alt="许可协议"></td>
+    <td width="50%"><img src="docs/screenshots/23-installer-finish.png?v=0.1.1" alt="完成页"></td>
   </tr>
   <tr>
     <td>MIT 许可协议</td>
