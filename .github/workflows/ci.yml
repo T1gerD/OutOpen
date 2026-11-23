@@ -30,3 +30,34 @@ jobs:
 
       - name: CLI smoke test
         run: dotnet run --project src/OutOpen.Cli -c Release --no-build -- types
+
+  installer:
+    runs-on: windows-latest
+    needs: build-test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish app and CLI
+        run: |
+          dotnet publish src/OutOpen.App -c Release -r win-x64 --self-contained false -o publish/app -v q --nologo
+          dotnet publish src/OutOpen.Cli -c Release -r win-x64 --self-contained false -o publish/cli -v q --nologo
+
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup --no-progress -y
+          echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
+
+      - name: Compile installer
+        run: iscc installer/OutOpen.iss
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OutOpen-setup
+          path: dist/OutOpen-*-setup.exe

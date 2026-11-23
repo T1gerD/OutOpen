@@ -1,4 +1,4 @@
-; OutOpen 安装脚本（Inno Setup 6）
+﻿; OutOpen 安装脚本（Inno Setup 6）
 ;
 ; 构建步骤：
 ;   dotnet publish src/OutOpen.App -c Release -r win-x64 --self-contained false -o publish/app
@@ -7,37 +7,60 @@
 ;
 ; 说明：
 ; - 按当前用户安装，不需要管理员权限；
-; - 不注册、不修改任何文件关联（OutOpen 只读取关联信息）；
-; - 卸载时保留 %LOCALAPPDATA%\OutOpen 下的配置、日志与查看器推荐库。
+; - 不注册文件关联、不注入第三方进程，只读取系统关联信息；
+; - 卸载时保留 %LOCALAPPDATA%\OutOpen 下的配置、日志与查看器推荐库；
+; - 安装向导中的「桌面快捷方式」「开机自启动（静默）」由自定义页面收集。
 
 #define AppName "OutOpen"
-#define AppVersion "0.1.0"
+#define AppVersion "0.1.1"
 #define AppPublisher "T1gerD"
+#define AppUrl "https://github.com/T1gerD/OutOpen"
 #define AppExeName "OutOpen.exe"
 
 [Setup]
 AppId={{6C1F6B29-7F4F-4C41-9B57-0A8A9C0E8D21}
 AppName={#AppName}
 AppVersion={#AppVersion}
+AppVerName={#AppName} {#AppVersion}
 AppPublisher={#AppPublisher}
+AppPublisherURL={#AppUrl}
+AppSupportURL={#AppUrl}/issues
+AppUpdatesURL={#AppUrl}/releases
+VersionInfoVersion=0.1.1.0
+VersionInfoDescription={#AppName} 安装程序
+VersionInfoProductName={#AppName}
+VersionInfoProductVersion={#AppVersion}
 DefaultDirName={localappdata}\Programs\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
+DisableWelcomePage=no
 PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
+LicenseFile=..\LICENSE
 OutputDir=..\dist
 OutputBaseFilename=OutOpen-{#AppVersion}-setup
 SetupIconFile=..\assets\outopen.ico
+WizardImageFile=..\assets\wizard-image.bmp
+WizardSmallImageFile=..\assets\wizard-small.bmp
 UninstallDisplayIcon={app}\{#AppExeName}
+UninstallDisplayName={#AppName} {#AppVersion}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+CloseApplications=yes
+RestartApplications=no
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 
-[Tasks]
-Name: "desktopicon"; Description: "创建桌面快捷方式"; GroupDescription: "附加任务："; Flags: unchecked
+[Languages]
+Name: "chinesesimplified"; MessagesFile: "ChineseSimplified.isl"
+
+[CustomMessages]
+chinesesimplified.OptionsCaption=附加选项
+chinesesimplified.OptionsDescription=选择安装完成后的行为。这些选项之后都可以在 OutOpen 的「设置」里修改。
+chinesesimplified.OptionsSubCaption=只监听你勾选的来源应用目录，不改文件关联，也不注入任何进程。
+chinesesimplified.OptionsDesktop=创建桌面快捷方式
+chinesesimplified.OptionsAutostart=开机自动启动（静默运行在系统托盘）
 
 [Files]
 Source: "..\publish\app\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -45,18 +68,52 @@ Source: "..\publish\cli\outopen.exe"; DestDir: "{app}"; Flags: ignoreversion ski
 
 [Icons]
 Name: "{group}\OutOpen"; Filename: "{app}\{#AppExeName}"
-Name: "{group}\OutOpen 诊断命令"; Filename: "{cmd}"; Parameters: "/k ""{app}\outopen.exe"" status"; Flags: skipifsourcedoesntexist
+Name: "{group}\OutOpen 命令行"; Filename: "{cmd}"; Parameters: "/k ""{app}\outopen.exe"" status"
 Name: "{group}\卸载 OutOpen"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\OutOpen"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
+Name: "{autodesktop}\OutOpen"; Filename: "{app}\{#AppExeName}"; Check: ShouldCreateDesktopIcon
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "OutOpen"; ValueData: """{app}\{#AppExeName}"" --tray"; Flags: uninsdeletevalue; Check: ShouldAutostart
 
 [Run]
-Filename: "{app}\{#AppExeName}"; Description: "启动 OutOpen"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(AppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
 Filename: "{app}\{#AppExeName}"; Parameters: "--quit"; Flags: runhidden skipifdoesntexist; RunOnceId: "StopOutOpen"
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{app}"
+Type: files; Name: "{autodesktop}\OutOpen.lnk"
 
 [Code]
-// 卸载不删除 %LOCALAPPDATA%\OutOpen（配置/日志/推荐库），避免用户设置被静默清空。
+var
+  OptionsPage: TInputOptionWizardPage;
+
+function ShouldCreateDesktopIcon: Boolean;
+begin
+  Result := (not WizardSilent) and OptionsPage.Values[0];
+end;
+
+function ShouldAutostart: Boolean;
+begin
+  Result := (not WizardSilent) and OptionsPage.Values[1];
+end;
+
+procedure InitializeWizard;
+begin
+  OptionsPage := CreateInputOptionPage(wpSelectDir,
+    ExpandConstant('{cm:OptionsCaption}'),
+    ExpandConstant('{cm:OptionsDescription}'),
+    ExpandConstant('{cm:OptionsSubCaption}'),
+    False, False);
+  OptionsPage.Add(ExpandConstant('{cm:OptionsDesktop}'));
+  OptionsPage.Add(ExpandConstant('{cm:OptionsAutostart}'));
+  OptionsPage.Values[0] := True;
+  OptionsPage.Values[1] := False;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+    RegDeleteValue(HKEY_CURRENT_USER,
+      'Software\Microsoft\Windows\CurrentVersion\Run', 'OutOpen');
+end;

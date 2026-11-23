@@ -25,22 +25,23 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // 卸载程序/脚本用 --quit 请求已运行的实例退出。
+        // 关键：没有实例在运行时也必须立刻退出，绝不能把卸载流程变成一次正常启动。
+        if (e.Args.Any(a => string.Equals(a, "--quit", StringComparison.OrdinalIgnoreCase)))
+        {
+            TryRequestExit();
+            Shutdown();
+            return;
+        }
+
         _mutex = new Mutex(initiallyOwned: true, MutexName, out var createdNew);
         if (!createdNew)
         {
-            // 第二个实例：带 --quit 时通知已运行的实例退出（卸载/脚本用），否则只提示。
-            if (e.Args.Any(a => string.Equals(a, "--quit", StringComparison.OrdinalIgnoreCase)))
-            {
-                TryRequestExit();
-            }
-            else
-            {
-                MessageBox.Show(
-                    "OutOpen 已经在运行了。可以在任务栏托盘里找到它。",
-                    "OutOpen",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-            }
+            MessageBox.Show(
+                "OutOpen 已经在运行了。可以在任务栏托盘里找到它。",
+                "OutOpen",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
 
             Shutdown();
             return;
@@ -144,16 +145,21 @@ public partial class App : Application
         listener.Start();
     }
 
-    /// <summary>作为第二个实例启动时，向已运行的实例发送退出请求。</summary>
+    /// <summary>向已运行的实例发送退出请求；实例可能还在启动中，因此短暂重试。</summary>
     private static void TryRequestExit()
     {
-        try
+        for (var attempt = 0; attempt < 20; attempt++)
         {
-            using var exitEvent = EventWaitHandle.OpenExisting(ExitEventName);
-            exitEvent.Set();
-        }
-        catch (WaitHandleCannotBeOpenedException)
-        {
+            try
+            {
+                using var exitEvent = EventWaitHandle.OpenExisting(ExitEventName);
+                exitEvent.Set();
+                return;
+            }
+            catch (WaitHandleCannotBeOpenedException)
+            {
+                Thread.Sleep(100);
+            }
         }
     }
 

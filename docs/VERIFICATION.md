@@ -108,6 +108,25 @@ MaxInk 被拉起并打开该文件；概览页「处理记录」+1，事件页�
 
 事件页显示「回退打开 / 指定的打开程序不可用，已回退到系统默认程序打开」，文件最终由 MaxInk 打开（截图 `docs/screenshots/15-fallback-events.png`）。测试后已把配置恢复为原值。
 
+## 6.2 安装向导与卸载实测（补充）
+
+用 Inno Setup 6.7.3 编译 `installer/OutOpen.iss`，生成 `dist/OutOpen-0.1.1-setup.exe`（约 2.6 MB，内置简体中文语言文件与自绘向导图）。
+
+**安装向导选项**：图形安装时在「附加选项」页分别验证两个选项的独立效果。
+
+| 选项 | 勾选 | 不勾选 |
+| --- | --- | --- |
+| 创建桌面快捷方式 | 生成 `%USERPROFILE%\Desktop\OutOpen.lnk` | 不生成（实测该路径不存在） |
+| 开机自动启动（静默运行在系统托盘） | `HKCU\...\CurrentVersion\Run\OutOpen` = `"C:\Users\...\Programs\OutOpen\OutOpen.exe" --tray` | 无该注册表值 |
+
+安装完成后 `%LOCALAPPDATA%\Programs\OutOpen` 与开始菜单三个快捷方式（OutOpen、OutOpen 命令行、卸载 OutOpen）总是创建；静默安装（`/VERYSILENT`）按设计不创建桌面快捷方式与自启动项。
+
+**卸载**：程序运行中卸载时，卸载器通过 `OutOpen.exe --quit` 让实例退出，exit 0；程序未运行时同样 exit 0（约 5 秒）。卸载会清理程序目录、开始菜单/桌面快捷方式与自启动项，但保留 `%LOCALAPPDATA%\OutOpen` 下的配置、日志与推荐库。
+
+**修复记录**：早期 `--quit` 只在「已有实例」分支生效，没有实例时会被当成一次正常启动，导致无窗口的卸载流程挂起。已改为在创建互斥量之前处理 `--quit`，并用 20×100ms 重试等待对方完成启动；修复后 `dotnet build` 0 警告 0 错误、`dotnet test` 76 通过。
+
+截图：`docs/screenshots/20-installer-welcome.png`、`21-installer-license.png`、`22-installer-options.png`、`23-installer-finish.png`。
+
 ## 7. 13 条验收对照
 
 | # | 计划书验收项 | 状态 | 证据 |
