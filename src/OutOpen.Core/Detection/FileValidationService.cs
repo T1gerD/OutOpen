@@ -22,7 +22,9 @@ public sealed class FileValidationService
     private static readonly string[] TemporarySuffixes =
     [
         ".part", ".partial", ".tmp", ".temp", ".download", ".crdownload", ".opdownload",
-        ".filepart", ".!ut", ".td", ".aria2", ".bc!", ".xltd", ".dl", ".wechat_temp"
+        ".filepart", ".!ut", ".td", ".aria2", ".bc!", ".xltd", ".dl", ".wechat_temp",
+        // 网盘客户端下载中的中间文件
+        ".downloading", ".baiduyun.uploading", ".baiduyun.uploading.cfg", ".pd", ".blob", ".qdl", ".!qb"
     ];
 
     private readonly FileTypeDetector _detector;

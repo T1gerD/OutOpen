@@ -153,6 +153,33 @@ MaxInk 被拉起并打开该文件；概览页「处理记录」+1，事件页�
 - 自启项指向桌面宿主：`cli\outopen.exe autostart on` 写入的是 `"...\Programs\OutOpen\OutOpen.exe" --tray`，而不是 CLI 自身（CLI 会解析 `..\OutOpen.exe`；早期版本误把 `cli\outopen.exe` 写进启动项，会拉起控制台进程，已修复）。
 - 卸载回归：静默卸载 `exit 0`，程序目录、开始菜单、桌面快捷方式与 Run 键都清理，`%LOCALAPPDATA%\OutOpen`（config/logs/viewer-catalog）保留。
 
+## 6.4 网盘类来源适配（0.1.3）
+
+本机没有安装任何网盘客户端，因此这一节的结论是「路径模板 + 单元测试级验证」，不是端到端实测：
+
+| 应用 | 内置候选目录 | 下载中文件过滤 | 本机状态 |
+| --- | --- | --- | --- |
+| 百度网盘 | `Documents\BaiduNetdiskDownload`、`%USERPROFILE%\BaiduNetdiskDownload`、`Downloads\BaiduNetdiskDownload` | `.baiduyun.uploading.cfg`、`.downloading`、`.part` | 未安装 |
+| 阿里云盘 | `Documents\阿里云盘`、`Documents\AliyunDrive`、`%USERPROFILE%\阿里云盘` | `.downloading`、`.blob` | 未安装 |
+| 夸克网盘 | `Documents\夸克网盘`、`Documents\Quark`、`Downloads\夸克网盘` | `.downloading`、`.part` | 未安装 |
+| 115 网盘 | `Documents\115网盘`、`Downloads\115网盘` | `.downloading`、`.part` | 未安装 |
+| 腾讯微云 | `Documents\腾讯微云`、`Documents\Weiyun` | `.downloading` | 未安装 |
+| 坚果云 | `Nutstore Files`、`Nutstore`、`Documents\Nutstore` | 排除 `.nutstore`、`node_modules` | 未安装 |
+| OneDrive | `%USERPROFILE%\OneDrive`、`OneDrive - *` | `.downloading`、`.tmp` | 未启用同步 |
+
+配套改动：
+
+1. 「来源应用」页每个应用新增 **「+ 添加下载目录」**：网盘客户端允许自定义下载位置，用户选中的目录写入 `config.json` 的 `sources.<id>.extraFolders`，保存后立即重启监听。
+2. 下载中占位符扩展名（`.downloading`、`.baiduyun.uploading.cfg`、`.qdl`、`.pd` 等）加入临时文件规则，落盘过程中不会被打开。
+3. 新增 6 个测试（`CloudDriveTests`）：网盘条目存在且默认关闭、候选目录非空、占位符判定、`extraFolders` 解析与配置往返、缩略图排除项。`dotnet test` 通过数 86。
+
+**自定义目录端到端验证**（用假目录代替未安装的客户端）：在 `%USERPROFILE%\Documents\QuarkCustom` 作为「夸克网盘」的附加下载目录，配置启用 quark 并投放 `OutOpen-quark-check.md`：
+
+- 日志：`[adapter] 适配器 夸克网盘 已启动，监听 2 个目录` → `[pipeline] 已打开：quark %USERPROFILE%\Documents\QuarkCustom\OutOpen-quark-check.md（pid 24508，系统默认程序）`
+- 事件页显示「已打开 · OutOpen-quark-check.md · Markdown 文档」，来源页显示两个监听目录与「移除」按钮
+- 截图：`docs/screenshots/30-cloud-sources.png`、`docs/screenshots/31-cloud-event.png`
+- 验证后已删除测试目录、关闭 quark、保留配置
+
 ## 7. 13 条验收对照
 
 | # | 计划书验收项 | 状态 | 证据 |

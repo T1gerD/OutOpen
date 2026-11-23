@@ -15,7 +15,7 @@
 ; - 安装向导中的「桌面快捷方式」「开机自启动（静默）」由自定义页面收集。
 
 #define AppName "OutOpen"
-#define AppVersion "0.1.2"
+#define AppVersion "0.1.3"
 #define AppPublisher "T1gerD"
 #define AppUrl "https://github.com/T1gerD/OutOpen"
 #define AppExeName "OutOpen.exe"
@@ -29,7 +29,7 @@ AppPublisher={#AppPublisher}
 AppPublisherURL={#AppUrl}
 AppSupportURL={#AppUrl}/issues
 AppUpdatesURL={#AppUrl}/releases
-VersionInfoVersion=0.1.2.0
+VersionInfoVersion=0.1.3.0
 VersionInfoDescription={#AppName} 安装程序
 VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppVersion}

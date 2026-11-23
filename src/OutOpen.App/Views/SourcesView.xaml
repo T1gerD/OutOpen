@@ -40,6 +40,20 @@
                                     </StackPanel>
                                     <TextBlock Text="{Binding Note}" Style="{StaticResource Muted}" Margin="0,6,0,0" TextWrapping="Wrap" />
                                     <TextBlock Text="{Binding FoldersText}" FontSize="11" Foreground="#475569" Margin="0,8,0,0" TextWrapping="Wrap" />
+                                    <ItemsControl ItemsSource="{Binding ExtraFolders}" Margin="0,6,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <DockPanel Margin="0,2,0,0">
+                                                    <Button DockPanel.Dock="Right" Content="移除"
+                                                            Command="{Binding DataContext.RemoveFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                            CommandParameter="{Binding}" FontSize="11" Padding="8,1" Margin="8,0,0,0" />
+                                                    <TextBlock Text="{Binding}" FontSize="11" Foreground="#2563EB" TextTrimming="CharacterEllipsis" />
+                                                </DockPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <Button Content="+ 添加下载目录" Command="{Binding AddFolderCommand}" HorizontalAlignment="Left"
+                                            Margin="0,8,0,0" FontSize="11" Padding="10,3" />
                                 </StackPanel>
                             </Grid>
                         </Border>

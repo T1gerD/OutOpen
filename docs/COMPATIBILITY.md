@@ -26,15 +26,21 @@
 | 微信 PC 版（微信 4.x 布局） | 启用 | `%USERPROFILE%\Documents\xwechat_files\*\msg\file` | 未验证（本机无此目录） |
 | QQ PC 版（NT） | 启用 | `%USERPROFILE%\Documents\Tencent Files\*\nt_qq\nt_data\File`、`...\FileRecv` | 目录已确认；接收文件未实测 |
 | 钉钉 | 关闭 | 用户补充目录 | 未安装 |
-| 百度网盘 | 关闭 | `%USERPROFILE%\Documents\BaiduNetdiskDownload` 等 | 未安装 |
-| 阿里云盘 | 关闭 | 用户补充目录 | 未安装 |
-| OneDrive | 关闭 | `%USERPROFILE%\OneDrive` | 目录存在；默认关闭，避免接管全部同步文件 |
+| 百度网盘 | 关闭 | `Documents\BaiduNetdiskDownload`、`%USERPROFILE%\BaiduNetdiskDownload` 等 | 未安装（路径为常见默认值） |
+| 阿里云盘 | 关闭 | `Documents\阿里云盘`、`Documents\AliyunDrive` | 未安装（路径为常见默认值） |
+| 夸克网盘 | 关闭 | `Documents\夸克网盘`、`Documents\Quark` | 未安装（路径为常见默认值） |
+| 115 网盘 | 关闭 | `Documents\115网盘`、`Downloads\115网盘` | 未安装（路径为常见默认值） |
+| 腾讯微云 | 关闭 | `Documents\腾讯微云`、`Documents\Weiyun` | 未安装（路径为常见默认值） |
+| 坚果云 | 关闭 | `%USERPROFILE%\Nutstore Files` 等 | 未安装（同步盘，默认关闭） |
+| OneDrive | 关闭 | `%USERPROFILE%\OneDrive`、`OneDrive - *` | 默认关闭，避免接管全部同步文件 |
 | Telegram Desktop | 关闭 | 标记为不支持自动识别 | 未安装 |
 
 说明：
 
-- 每个应用的「监听目录」= 内置模板 + 用户在 `config.json` 里补充的 `extraFolders`；解析后只保留真实存在的目录。
-- 排除目录（如 `Temp`、`Cache`、`Thumb`、`Image`、`avatar`、`Emoji`）不会触发。
+- 每个应用的「监听目录」= 内置模板 + 用户在界面「添加下载目录」写进 `extraFolders` 的自定义路径；解析后只保留真实存在的目录。
+- 网盘类应用默认关闭：它们的下载目录可在各自设置里修改，安装后请打开「来源应用」页确认目录，必要时点「添加下载目录」。
+- 下载中的中间文件（`.downloading`、`.baiduyun.uploading.cfg`、`.part`、`.tmp` 等）会被文件名规则直接跳过，不会打开半成品。
+- 排除目录（如 `Temp`、`Cache`、`Thumb`、`Image`、`avatar`、`Emoji`、`.thumbnails`）不会触发。
 - 应用升级可能改变缓存布局；找不到目录时界面显示「未找到」，不会把进程运行误报成「已接管」。
 - 点击应用内部预览不会经过 OutOpen（详见 `ARCHITECTURE.md` 的边界说明）。
 

@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
+using System.Windows.Forms;
 using OutOpen.Core.Adapters;
 using OutOpen.Core.Hosting;
 
@@ -9,7 +11,7 @@ public sealed class SourceRow : ObservableObject
 {
     private bool _enabled;
 
-    public SourceRow(SourceStatus status, bool enabled)
+    public SourceRow(SourceStatus status, bool enabled, IReadOnlyList<string>? extraFolders = null)
     {
         Id = status.Id;
         DisplayName = status.DisplayName;
@@ -29,10 +31,19 @@ public sealed class SourceRow : ObservableObject
             _ => "#94A3B8"
         };
         Folders = status.Folders;
-        FoldersText = status.Folders.Count == 0
-            ? "本机未找到该应用的接收目录（可在配置中手动添加）。"
-            : string.Join("    ", status.Folders.Take(2)) + (status.Folders.Count > 2 ? $" 等 {status.Folders.Count} 个目录" : string.Empty);
+        ExtraFolders = new ObservableCollection<string>(extraFolders ?? []);
+        ExtraFolders.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasExtraFolders));
         _enabled = enabled;
+        AddFolderCommand = new RelayCommand(() => AddFolderRequested?.Invoke(this));
+        RemoveFolderCommand = new RelayCommand<string>(path =>
+        {
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                ExtraFolders.Remove(path);
+                RemoveFolderRequested?.Invoke(this, path);
+            }
+        });
+        RebuildFoldersText();
     }
 
     public string Id { get; }
@@ -49,12 +60,37 @@ public sealed class SourceRow : ObservableObject
 
     public IReadOnlyList<string> Folders { get; }
 
-    public string FoldersText { get; }
+    public ObservableCollection<string> ExtraFolders { get; }
+
+    public bool HasExtraFolders => ExtraFolders.Count > 0;
+
+    public string FoldersText { get; private set; } = string.Empty;
+
+    public RelayCommand AddFolderCommand { get; }
+
+    public RelayCommand<string> RemoveFolderCommand { get; }
+
+    public event Action<SourceRow>? AddFolderRequested;
+
+    public event Action<SourceRow, string>? RemoveFolderRequested;
 
     public bool Enabled
     {
         get => _enabled;
         set => Set(ref _enabled, value);
+    }
+
+    public void RebuildFoldersText()
+    {
+        var all = Folders.Concat(ExtraFolders)
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        FoldersText = all.Count == 0
+            ? "未找到目录。点「添加目录」指定网盘/应用的下载位置。"
+            : string.Join("    ", all.Take(2)) + (all.Count > 2 ? $" 等 {all.Count} 个目录" : string.Empty);
+        OnPropertyChanged(nameof(FoldersText));
     }
 }
 
@@ -105,8 +141,10 @@ public sealed class SourcesViewModel : ObservableObject
         foreach (var status in _host.GetSources())
         {
             var settings = _host.Config.Sources.TryGetValue(status.Id, out var stored) ? stored : null;
-            var row = new SourceRow(status, settings?.Enabled ?? status.Enabled);
+            var row = new SourceRow(status, settings?.Enabled ?? status.Enabled, settings?.ExtraFolders);
             row.PropertyChanged += OnRowChanged;
+            row.AddFolderRequested += OnAddFolder;
+            row.RemoveFolderRequested += OnRemoveFolder;
             Rows.Add(row);
         }
 
@@ -125,20 +163,59 @@ public sealed class SourcesViewModel : ObservableObject
             }
 
             settings.Enabled = row.Enabled;
+            settings.ExtraFolders = row.ExtraFolders.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         }
 
         _host.SaveConfig();
         _host.ReloadFromDisk();
         Refresh();
-        Notice = "已保存。新的接管设置已立即生效。";
+        Notice = "已保存。新的监听目录与接管设置已立即生效。";
+    }
+
+    private void OnAddFolder(SourceRow row)
+    {
+        using var dialog = new FolderBrowserDialog
+        {
+            Description = $"选择「{row.DisplayName}」的下载目录（例如网盘客户端里设置的下载位置）",
+            UseDescriptionForTitle = true,
+            ShowNewFolderButton = false,
+            SelectedPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+        };
+
+        if (dialog.ShowDialog() != DialogResult.OK || string.IsNullOrWhiteSpace(dialog.SelectedPath))
+        {
+            return;
+        }
+
+        var path = dialog.SelectedPath.TrimEnd('\\');
+        if (row.Folders.Contains(path, StringComparer.OrdinalIgnoreCase) ||
+            row.ExtraFolders.Contains(path, StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        row.ExtraFolders.Add(path);
+        row.RebuildFoldersText();
+        MarkDirty("已添加目录，记得点「保存并应用更改」。");
+    }
+
+    private void OnRemoveFolder(SourceRow row, string path)
+    {
+        row.RebuildFoldersText();
+        MarkDirty("已移除目录，记得点「保存并应用更改」。");
+    }
+
+    private void MarkDirty(string message)
+    {
+        IsDirty = true;
+        Notice = message;
     }
 
     private void OnRowChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(SourceRow.Enabled))
         {
-            IsDirty = true;
-            Notice = "有未保存的更改。";
+            MarkDirty("有未保存的更改。");
         }
     }
 }

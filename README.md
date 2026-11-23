@@ -38,7 +38,7 @@
 
 | | 功能 | 说明 |
 | --- | --- | --- |
-| 📂 | 来源应用接管 | 微信 PC、QQ NT 默认启用；钉钉、百度网盘、阿里云盘、OneDrive、Telegram 可按需启用或补充监听目录 |
+| 📂 | 来源应用接管 | 微信 PC、QQ NT 默认启用；百度网盘 / 阿里云盘 / 夸克 / 115 / 微云 / 坚果云 / OneDrive / 钉钉可在「来源应用」页启用并添加下载目录 |
 | 🔍 | 文件识别与校验 | 17 种扩展名 + MIME + 魔数签名；空文件、临时后缀、被占用、超大文件、签名不符都会被拦下 |
 | 🧹 | 重复事件去重 | 同一文件在时间窗口内只处理一次（默认 8 秒） |
 | ⚙️ | 打开规则 | 每种扩展名可设「外部默认程序 / 指定程序 / 不接管」，可加来源应用限定规则 |
@@ -81,7 +81,7 @@
 
 ### 方式一：安装包（推荐）
 
-1. 打开 [Releases](https://github.com/T1gerD/OutOpen/releases) 下载 `OutOpen-0.1.2-setup.exe`；
+1. 打开 [Releases](https://github.com/T1gerD/OutOpen/releases) 下载 `OutOpen-0.1.3-setup.exe`；
 2. 按安装向导完成安装，在「附加选项」页选择是否**创建桌面快捷方式**、是否**开机自动启动（静默运行在系统托盘）**；
 3. 启动 OutOpen，在「来源应用」里确认微信 / QQ 的监听目录，点「保存并应用」；
 4. 在微信里接收一个文件，落盘稳定后它会用系统默认程序打开，事件页会留下记录。
@@ -90,16 +90,16 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/20-installer-welcome.png?v=0.1.2" alt="安装向导欢迎页"></td>
-    <td width="50%"><img src="docs/screenshots/22-installer-options.png?v=0.1.2" alt="安装向导附加选项"></td>
+    <td width="50%"><img src="docs/screenshots/20-installer-welcome.png?v=0.1.3" alt="安装向导欢迎页"></td>
+    <td width="50%"><img src="docs/screenshots/22-installer-options.png?v=0.1.3" alt="安装向导附加选项"></td>
   </tr>
   <tr>
     <td>欢迎页：品牌图标与版本</td>
     <td>附加选项：桌面快捷方式 / 开机自启动（静默）</td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/21-installer-license.png?v=0.1.2" alt="许可协议"></td>
-    <td width="50%"><img src="docs/screenshots/23-installer-finish.png?v=0.1.2" alt="完成页"></td>
+    <td width="50%"><img src="docs/screenshots/21-installer-license.png?v=0.1.3" alt="许可协议"></td>
+    <td width="50%"><img src="docs/screenshots/23-installer-finish.png?v=0.1.3" alt="完成页"></td>
   </tr>
   <tr>
     <td>MIT 许可协议</td>
@@ -209,7 +209,9 @@ flowchart LR
 | --- | --- | --- |
 | 微信 PC（3.x / 4.x 候选路径） | ✅ 默认启用 | 本机已验证：文件落盘后外部打开 |
 | QQ NT | ✅ 默认启用 | 已解析目录；端到端未逐项回归 |
-| 钉钉 / 百度网盘 / 阿里云盘 / OneDrive | ⚠️ 需手动确认目录 | 目录布局随版本变化，默认关闭 |
+| 钉钉 | ⚠️ 需手动确认目录 | 目录布局随版本变化，默认关闭 |
+| 百度网盘 / 阿里云盘 / 夸克网盘 / 115 网盘 / 腾讯微云 | 📁 常见默认目录 | 默认关闭；在「来源应用」页确认目录，或点「添加下载目录」 |
+| 坚果云 / OneDrive | 🔄 同步盘 | 默认关闭；开启后会接管同步目录里的所有新文件 |
 | Telegram | ❌ 不支持自动识别 | 需手动指定目录 |
 
 ## 常见问题
@@ -271,7 +273,7 @@ dotnet test OutOpen.sln                     # 76 个单元测试
 dotnet publish src/OutOpen.App -c Release -r win-x64 --self-contained false -o publish/app
 dotnet publish src/OutOpen.Cli -c Release -r win-x64 --self-contained false -o publish/cli
 pwsh scripts/verify-packaging.ps1           # 校验 GUI/CLI 子系统与目录布局
-iscc installer/OutOpen.iss                  # 生成 dist/OutOpen-0.1.2-setup.exe（Inno Setup 6）
+iscc installer/OutOpen.iss                  # 生成 dist/OutOpen-0.1.3-setup.exe（Inno Setup 6）
 ```
 
 > 不要用 `dotnet run --project src/OutOpen.App` 当日常启动方式：它会把 GUI 挂成终端的子进程，终端本身也带控制台窗口。`scripts/run-app.ps1` 在构建后用 `Start-Process` 独立启动 exe。
