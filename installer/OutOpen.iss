@@ -15,7 +15,7 @@
 ; - 安装向导中的「桌面快捷方式」「开机自启动（静默）」由自定义页面收集。
 
 #define AppName "OutOpen"
-#define AppVersion "0.1.3"
+#define AppVersion "0.1.4"
 #define AppPublisher "T1gerD"
 #define AppUrl "https://github.com/T1gerD/OutOpen"
 #define AppExeName "OutOpen.exe"
@@ -29,7 +29,7 @@ AppPublisher={#AppPublisher}
 AppPublisherURL={#AppUrl}
 AppSupportURL={#AppUrl}/issues
 AppUpdatesURL={#AppUrl}/releases
-VersionInfoVersion=0.1.3.0
+VersionInfoVersion=0.1.4.0
 VersionInfoDescription={#AppName} 安装程序
 VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppVersion}
@@ -72,8 +72,8 @@ Source: "..\publish\cli\*"; DestDir: "{app}\cli"; Flags: ignoreversion recursesu
 
 [Icons]
 Name: "{group}\OutOpen"; Filename: "{app}\{#AppExeName}"
-Name: "{group}\OutOpen 命令行"; Filename: "{cmd}"; Parameters: "/k ""{app}\cli\outopen.exe"" status"
-Name: "{group}\卸载 OutOpen"; Filename: "{uninstallexe}"
+Name: "{group}\OutOpen 命令行"; Filename: "{cmd}"; Parameters: "/k ""{app}\cli\outopen.exe"" status"; IconFilename: "{app}\{#AppExeName}"; IconIndex: 0
+Name: "{group}\卸载 OutOpen"; Filename: "{uninstallexe}"; IconFilename: "{app}\{#AppExeName}"; IconIndex: 0
 Name: "{autodesktop}\OutOpen"; Filename: "{app}\{#AppExeName}"; Check: ShouldCreateDesktopIcon
 
 [Registry]

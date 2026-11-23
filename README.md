@@ -81,7 +81,7 @@
 
 ### 方式一：安装包（推荐）
 
-1. 打开 [Releases](https://github.com/T1gerD/OutOpen/releases) 下载 `OutOpen-0.1.3-setup.exe`；
+1. 打开 [Releases](https://github.com/T1gerD/OutOpen/releases) 下载 `OutOpen-0.1.4-setup.exe`；
 2. 按安装向导完成安装，在「附加选项」页选择是否**创建桌面快捷方式**、是否**开机自动启动（静默运行在系统托盘）**；
 3. 启动 OutOpen，在「来源应用」里确认微信 / QQ 的监听目录，点「保存并应用」；
 4. 在微信里接收一个文件，落盘稳定后它会用系统默认程序打开，事件页会留下记录。
@@ -90,16 +90,16 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/20-installer-welcome.png?v=0.1.3" alt="安装向导欢迎页"></td>
-    <td width="50%"><img src="docs/screenshots/22-installer-options.png?v=0.1.3" alt="安装向导附加选项"></td>
+    <td width="50%"><img src="docs/screenshots/20-installer-welcome.png?v=0.1.4" alt="安装向导欢迎页"></td>
+    <td width="50%"><img src="docs/screenshots/22-installer-options.png?v=0.1.4" alt="安装向导附加选项"></td>
   </tr>
   <tr>
     <td>欢迎页：品牌图标与版本</td>
     <td>附加选项：桌面快捷方式 / 开机自启动（静默）</td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/21-installer-license.png?v=0.1.3" alt="许可协议"></td>
-    <td width="50%"><img src="docs/screenshots/23-installer-finish.png?v=0.1.3" alt="完成页"></td>
+    <td width="50%"><img src="docs/screenshots/21-installer-license.png?v=0.1.4" alt="许可协议"></td>
+    <td width="50%"><img src="docs/screenshots/23-installer-finish.png?v=0.1.4" alt="完成页"></td>
   </tr>
   <tr>
     <td>MIT 许可协议</td>
@@ -273,7 +273,7 @@ dotnet test OutOpen.sln                     # 76 个单元测试
 dotnet publish src/OutOpen.App -c Release -r win-x64 --self-contained false -o publish/app
 dotnet publish src/OutOpen.Cli -c Release -r win-x64 --self-contained false -o publish/cli
 pwsh scripts/verify-packaging.ps1           # 校验 GUI/CLI 子系统与目录布局
-iscc installer/OutOpen.iss                  # 生成 dist/OutOpen-0.1.3-setup.exe（Inno Setup 6）
+iscc installer/OutOpen.iss                  # 生成 dist/OutOpen-0.1.4-setup.exe（Inno Setup 6）
 ```
 
 > 不要用 `dotnet run --project src/OutOpen.App` 当日常启动方式：它会把 GUI 挂成终端的子进程，终端本身也带控制台窗口。`scripts/run-app.ps1` 在构建后用 `Start-Process` 独立启动 exe。

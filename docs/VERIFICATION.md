@@ -180,6 +180,20 @@ MaxInk 被拉起并打开该文件；概览页「处理记录」+1，事件页�
 - 截图：`docs/screenshots/30-cloud-sources.png`、`docs/screenshots/31-cloud-event.png`
 - 验证后已删除测试目录、关闭 quark、保留配置
 
+## 6.5 图标统一与桌面图标刷新（0.1.4）
+
+0.1.3 只替换了程序资源图标，安装后桌面仍可能显示旧图，原因有两层：
+
+1. 开始菜单的「OutOpen 命令行」「卸载 OutOpen」两个快捷方式没有显式 `IconFilename`，前者显示 cmd 图标、后者依赖卸载器自身图标；
+2. Windows Explorer 的图标缓存（`%LOCALAPPDATA%\IconCache.db`、`IconCache\iconcache_*.db`）按快捷方式路径缓存旧图，替换 exe 后不会自动失效。
+
+0.1.4 的处理：
+
+- `installer/OutOpen.iss` 给所有快捷方式加 `IconFilename: "{app}\{#AppExeName}"; IconIndex: 0`；
+- 安装向导侧栏图重绘为 `v0.1.4 MVP`，与 exe、安装包、卸载器共用同一 `outopen.ico`（16–256 多尺寸，已去除白边）；
+- 本机验证：清空 iconcache 并重启 Explorer 后，用 `SHGetFileInfo` 提取桌面快捷方式、开始菜单三个快捷方式、`OutOpen.exe`、`unins000.exe`、`setup.exe` 的图标均为新图标（截图 `docs/screenshots/20-installer-welcome.png`）；
+- 若个别机器仍显示旧图，删除 `%LOCALAPPDATA%\IconCache.db` 与 `%LOCALAPPDATA%\Microsoft\Windows\Explorer\iconcache_*.db` 后重启 Explorer，或注销重登一次。
+
 ## 7. 13 条验收对照
 
 | # | 计划书验收项 | 状态 | 证据 |
