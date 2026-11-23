@@ -1,4 +1,5 @@
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
@@ -10,6 +11,11 @@ namespace OutOpen.App;
 
 public partial class App : Application
 {
+    // Windows GUI 子系统进程默认没有控制台。如果宿主（脚本、调试器、某些启动器）
+    // 把本进程挂到了一个控制台上，这里主动脱离，保证关闭终端不会影响软件本体。
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool FreeConsole();
+
     private const string MutexName = @"Local\OutOpen.SingleInstance";
     private const string ExitEventName = @"Local\OutOpen.ExitRequested";
 
@@ -23,6 +29,9 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
+        // 结构性保证：GUI 进程不依附任何控制台。没有控制台时返回 false，属正常情况。
+        FreeConsole();
+
         base.OnStartup(e);
 
         // 卸载程序/脚本用 --quit 请求已运行的实例退出。

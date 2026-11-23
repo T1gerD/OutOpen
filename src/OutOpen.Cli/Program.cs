@@ -220,7 +220,7 @@ internal static class Program
             case "on":
             case "off":
                 var enable = action == "on";
-                manager.SetEnabled(enable);
+                manager.SetEnabled(enable, ResolveDesktopHost());
                 Console.WriteLine(enable ? "已注册开机自启（--tray 启动，最小化到托盘）。" : "已取消开机自启。");
                 Console.WriteLine("注册命令：" + (manager.RegisteredCommand ?? "（无）"));
                 return 0;
@@ -228,6 +228,23 @@ internal static class Program
                 Console.Error.WriteLine("用法：outopen autostart [status|on|off]");
                 return 2;
         }
+    }
+
+    /// <summary>
+    /// 开机自启必须指向桌面宿主（OutOpen.exe），不能是把 CLI 自己写进启动项——
+    /// 否则登录后会拉起一个控制台进程。安装布局为 {app}\OutOpen.exe + {app}\cli\outopen.exe，
+    /// publish 布局为 publish\app\OutOpen.exe + publish\cli\outopen.exe。
+    /// </summary>
+    private static string? ResolveDesktopHost()
+    {
+        var baseDir = AppContext.BaseDirectory;
+        var candidates = new[]
+        {
+            Path.GetFullPath(Path.Combine(baseDir, "..", "OutOpen.exe")),
+            Path.GetFullPath(Path.Combine(baseDir, "..", "app", "OutOpen.exe"))
+        };
+
+        return candidates.FirstOrDefault(File.Exists);
     }
 
     private static int ViewersCommand(string[] rest)

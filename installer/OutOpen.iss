@@ -5,6 +5,9 @@
 ;   dotnet publish src/OutOpen.Cli -c Release -r win-x64 --self-contained false -o publish/cli
 ;   iscc installer/OutOpen.iss
 ;
+; 注意：GUI 可执行文件是 OutOpen.exe，CLI 是 outopen.exe。Windows 文件系统不区分大小写，
+; 两者绝不能装进同一个目录（早期版本因此把 GUI 覆盖成控制台程序）。CLI 固定放进 {app}\cli。
+;
 ; 说明：
 ; - 按当前用户安装，不需要管理员权限；
 ; - 不注册文件关联、不注入第三方进程，只读取系统关联信息；
@@ -12,7 +15,7 @@
 ; - 安装向导中的「桌面快捷方式」「开机自启动（静默）」由自定义页面收集。
 
 #define AppName "OutOpen"
-#define AppVersion "0.1.1"
+#define AppVersion "0.1.2"
 #define AppPublisher "T1gerD"
 #define AppUrl "https://github.com/T1gerD/OutOpen"
 #define AppExeName "OutOpen.exe"
@@ -26,7 +29,7 @@ AppPublisher={#AppPublisher}
 AppPublisherURL={#AppUrl}
 AppSupportURL={#AppUrl}/issues
 AppUpdatesURL={#AppUrl}/releases
-VersionInfoVersion=0.1.1.0
+VersionInfoVersion=0.1.2.0
 VersionInfoDescription={#AppName} 安装程序
 VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppVersion}
@@ -64,11 +67,12 @@ chinesesimplified.OptionsAutostart=开机自动启动（静默运行在系统托
 
 [Files]
 Source: "..\publish\app\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\publish\cli\outopen.exe"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+; CLI 与 GUI 的可执行文件名只差大小写，必须分目录，避免互相覆盖。
+Source: "..\publish\cli\*"; DestDir: "{app}\cli"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist
 
 [Icons]
 Name: "{group}\OutOpen"; Filename: "{app}\{#AppExeName}"
-Name: "{group}\OutOpen 命令行"; Filename: "{cmd}"; Parameters: "/k ""{app}\outopen.exe"" status"
+Name: "{group}\OutOpen 命令行"; Filename: "{cmd}"; Parameters: "/k ""{app}\cli\outopen.exe"" status"
 Name: "{group}\卸载 OutOpen"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\OutOpen"; Filename: "{app}\{#AppExeName}"; Check: ShouldCreateDesktopIcon
 
@@ -83,6 +87,7 @@ Filename: "{app}\{#AppExeName}"; Parameters: "--quit"; Flags: runhidden skipifdo
 
 [UninstallDelete]
 Type: files; Name: "{autodesktop}\OutOpen.lnk"
+Type: filesandordirs; Name: "{app}\cli"
 
 [Code]
 var

@@ -110,7 +110,7 @@ MaxInk 被拉起并打开该文件；概览页「处理记录」+1，事件页�
 
 ## 6.2 安装向导与卸载实测（补充）
 
-用 Inno Setup 6.7.3 编译 `installer/OutOpen.iss`，生成 `dist/OutOpen-0.1.1-setup.exe`（约 2.6 MB，内置简体中文语言文件与自绘向导图）。
+用 Inno Setup 6.7.3 编译 `installer/OutOpen.iss`，生成 `dist/OutOpen-0.1.2-setup.exe`（约 2.6 MB，内置简体中文语言文件与自绘向导图）。
 
 **安装向导选项**：图形安装时在「附加选项」页分别验证两个选项的独立效果。
 
@@ -126,6 +126,32 @@ MaxInk 被拉起并打开该文件；概览页「处理记录」+1，事件页�
 **修复记录**：早期 `--quit` 只在「已有实例」分支生效，没有实例时会被当成一次正常启动，导致无窗口的卸载流程挂起。已改为在创建互斥量之前处理 `--quit`，并用 20×100ms 重试等待对方完成启动；修复后 `dotnet build` 0 警告 0 错误、`dotnet test` 76 通过。
 
 截图：`docs/screenshots/20-installer-welcome.png`、`21-installer-license.png`、`22-installer-options.png`、`23-installer-finish.png`。
+
+## 6.3 GUI 启动方式与安装布局（0.1.2 修复）
+
+用户反馈：双击安装后的 EXE 先出现控制台窗口，关闭终端时软件本体也退出。排查确认这是**打包布局缺陷**，不是启动代码问题：
+
+- GUI 是 `src/OutOpen.App`（`OutputType=WinExe`，PE subsystem=2）；CLI 是 `src/OutOpen.Cli`（AssemblyName `outopen`，PE subsystem=3）。
+- 早期 Inno 脚本把 `publish\cli\outopen.exe` 装到 `{app}`，与 GUI 的 `{app}\OutOpen.exe` **只差大小写**。Windows 文件系统不区分大小写，安装时 CLI 覆盖了 GUI —— 安装目录里只剩控制台程序 `outopen.exe`。
+- 实测（0.1.1 安装目录）：`%LOCALAPPDATA%\Programs\OutOpen\OutOpen.exe` 的 PE subsystem = **3**，`OutOpen.deps.json` 属于 GUI 而可执行文件属于 CLI，双击自然先弹控制台。
+
+修复内容（0.1.2）：
+
+1. CLI 安装到 `{app}\cli\outopen.exe`，开始菜单「OutOpen 命令行」指向该路径；卸载时清理 `{app}\cli`。
+2. `App.OnStartup` 最先调用 `FreeConsole()`：即便被宿主挂到控制台，也主动脱离，保证进程与终端生命周期无关。
+3. GUI 日志只走 `FileAppLog`（`%LOCALAPPDATA%\OutOpen\logs\outopen-yyyyMMdd.log`），不依赖 `Console`；`ConsoleAppLog` 仅供 CLI 使用。
+4. 新增 `scripts/run-app.ps1`：构建后用 `Start-Process` 独立启动，开发时不再用 `dotnet run` 当日常入口。
+5. 新增 `scripts/verify-packaging.ps1`，在 CI 的 installer job 中校验：GUI 产物 subsystem 必须为 2、CLI 必须为 3。
+
+验证结果（0.1.2）：
+
+- `dotnet build OutOpen.sln` 0 警告 0 错误；`dotnet test` 76 通过。
+- `pwsh scripts/verify-packaging.ps1`：`OK  GUI 子系统：publish/app/OutOpen.exe`、`OK  控制台子系统：publish/cli/outopen.exe`。
+- 安装后目录同时存在 `OutOpen.exe`（subsystem=2）与 `cli\outopen.exe`（subsystem=3）；双击 GUI 只出现主窗口，任务管理器里没有 `conhost.exe` 子进程。
+- 从命令行启动 GUI 后关闭该终端，GUI 继续运行；`OutOpen.exe --quit` 可正常退出。
+- `cli\outopen.exe status` 正常工作，输出与源码构建一致。
+- 自启项指向桌面宿主：`cli\outopen.exe autostart on` 写入的是 `"...\Programs\OutOpen\OutOpen.exe" --tray`，而不是 CLI 自身（CLI 会解析 `..\OutOpen.exe`；早期版本误把 `cli\outopen.exe` 写进启动项，会拉起控制台进程，已修复）。
+- 卸载回归：静默卸载 `exit 0`，程序目录、开始菜单、桌面快捷方式与 Run 键都清理，`%LOCALAPPDATA%\OutOpen`（config/logs/viewer-catalog）保留。
 
 ## 7. 13 条验收对照
 

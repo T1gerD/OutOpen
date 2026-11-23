@@ -81,7 +81,7 @@
 
 ### 方式一：安装包（推荐）
 
-1. 打开 [Releases](https://github.com/T1gerD/OutOpen/releases) 下载 `OutOpen-0.1.1-setup.exe`；
+1. 打开 [Releases](https://github.com/T1gerD/OutOpen/releases) 下载 `OutOpen-0.1.2-setup.exe`；
 2. 按安装向导完成安装，在「附加选项」页选择是否**创建桌面快捷方式**、是否**开机自动启动（静默运行在系统托盘）**；
 3. 启动 OutOpen，在「来源应用」里确认微信 / QQ 的监听目录，点「保存并应用」；
 4. 在微信里接收一个文件，落盘稳定后它会用系统默认程序打开，事件页会留下记录。
@@ -90,16 +90,16 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/20-installer-welcome.png?v=0.1.1" alt="安装向导欢迎页"></td>
-    <td width="50%"><img src="docs/screenshots/22-installer-options.png?v=0.1.1" alt="安装向导附加选项"></td>
+    <td width="50%"><img src="docs/screenshots/20-installer-welcome.png?v=0.1.2" alt="安装向导欢迎页"></td>
+    <td width="50%"><img src="docs/screenshots/22-installer-options.png?v=0.1.2" alt="安装向导附加选项"></td>
   </tr>
   <tr>
     <td>欢迎页：品牌图标与版本</td>
     <td>附加选项：桌面快捷方式 / 开机自启动（静默）</td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/21-installer-license.png?v=0.1.1" alt="许可协议"></td>
-    <td width="50%"><img src="docs/screenshots/23-installer-finish.png?v=0.1.1" alt="完成页"></td>
+    <td width="50%"><img src="docs/screenshots/21-installer-license.png?v=0.1.2" alt="许可协议"></td>
+    <td width="50%"><img src="docs/screenshots/23-installer-finish.png?v=0.1.2" alt="完成页"></td>
   </tr>
   <tr>
     <td>MIT 许可协议</td>
@@ -117,7 +117,7 @@ cd OutOpen
 dotnet restore
 dotnet build -c Release
 dotnet test
-dotnet run --project src/OutOpen.App          # 启动界面
+.\scripts\run-app.ps1                         # 启动界面（独立进程，不依赖终端）
 dotnet run --project src/OutOpen.Cli -- status # 命令行诊断
 ```
 
@@ -144,6 +144,8 @@ dotnet run --project src/OutOpen.Cli -- status # 命令行诊断
 当某个扩展名「没有默认程序 / 关联失效 / 只有商店应用」时，OutOpen 会给出官方入口（含核验时间）。**不会**自动下载、不会静默安装、不会修改你的默认关联；你可以「稍后提醒」「不再提醒」或「恢复推荐」。
 
 ### 命令行
+
+安装版在 `%LOCALAPPDATA%\Programs\OutOpen\cli\outopen.exe`（开始菜单「OutOpen 命令行」会打开它；`outopen` 与 `OutOpen.exe` 只差大小写，所以分目录放置）。源码构建用 `dotnet run --project src/OutOpen.Cli -- <命令>`。
 
 ```text
 outopen status            运行状态、目录、来源概况
@@ -237,6 +239,14 @@ flowchart LR
 </details>
 
 <details>
+<summary><b>为什么启动时没有黑色控制台窗口？</b></summary>
+
+`OutOpen.App` 编译为 `WinExe`（Windows GUI 子系统，PE subsystem=2），不是控制台程序；启动时还会主动 `FreeConsole()` 脱离任何继承来的控制台。所以双击 EXE 只出现主窗口，关闭任何终端都不会带走软件本体。日志写入 `%LOCALAPPDATA%\OutOpen\logs\outopen-yyyyMMdd.log`，不依赖控制台输出。
+
+CLI 工具（`outopen.exe`）本来就是控制台程序，安装版放在 `{app}\cli\` 子目录，不会和 GUI 的 `OutOpen.exe` 混在一起。
+</details>
+
+<details>
 <summary><b>为什么安装向导没有「为所有用户安装」？</b></summary>
 
 OutOpen 按当前用户安装（`%LOCALAPPDATA%\Programs\OutOpen`），不需要管理员权限，也不污染系统级目录；自启动同样只写当前用户的 `HKCU`。
@@ -260,8 +270,11 @@ dotnet build OutOpen.sln -c Release         # 全量构建
 dotnet test OutOpen.sln                     # 76 个单元测试
 dotnet publish src/OutOpen.App -c Release -r win-x64 --self-contained false -o publish/app
 dotnet publish src/OutOpen.Cli -c Release -r win-x64 --self-contained false -o publish/cli
-iscc installer/OutOpen.iss                  # 生成 dist/OutOpen-0.1.1-setup.exe（Inno Setup 6）
+pwsh scripts/verify-packaging.ps1           # 校验 GUI/CLI 子系统与目录布局
+iscc installer/OutOpen.iss                  # 生成 dist/OutOpen-0.1.2-setup.exe（Inno Setup 6）
 ```
+
+> 不要用 `dotnet run --project src/OutOpen.App` 当日常启动方式：它会把 GUI 挂成终端的子进程，终端本身也带控制台窗口。`scripts/run-app.ps1` 在构建后用 `Start-Process` 独立启动 exe。
 
 仓库结构：
 
