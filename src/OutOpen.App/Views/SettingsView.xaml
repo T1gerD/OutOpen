@@ -46,9 +46,19 @@
                             <ColumnDefinition Width="140" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="最大打开文件（MB）" VerticalAlignment="Center" Foreground="{StaticResource TextBrush}" />
+                        <TextBlock Grid.Column="0" Text="普通文件上限（MB）" VerticalAlignment="Center" Foreground="{StaticResource TextBrush}" />
                         <TextBox Grid.Column="1" Text="{Binding MaxFileSizeMb, UpdateSourceTrigger=LostFocus}" VerticalContentAlignment="Center" Padding="8,4" />
-                        <TextBlock Grid.Column="2" Text="超过大小的文件记录后跳过，避免误开超大文件" Style="{StaticResource Muted}" Margin="14,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <TextBlock Grid.Column="2" Text="文档、图片等超过该大小记录后跳过；0 表示不限制" Style="{StaticResource Muted}" Margin="14,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" />
+                    </Grid>
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="220" />
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="压缩包上限（MB）" VerticalAlignment="Center" Foreground="{StaticResource TextBrush}" />
+                        <TextBox Grid.Column="1" Text="{Binding MaxArchiveSizeMb, UpdateSourceTrigger=LostFocus}" VerticalContentAlignment="Center" Padding="8,4" />
+                        <TextBlock Grid.Column="2" Text="zip／7z／rar 单独放宽，默认 8192；0 表示不限制" Style="{StaticResource Muted}" Margin="14,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" />
                     </Grid>
                     <Grid Margin="0,10,0,0">
                         <Grid.ColumnDefinitions>

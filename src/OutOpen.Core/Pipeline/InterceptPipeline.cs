@@ -69,7 +69,8 @@ public sealed class InterceptPipeline
             var options = new FileValidationOptions(
                 config.Settings.StabilitySeconds,
                 config.Settings.MaxFileSizeMb,
-                config.Settings.RequireSignatureMatch);
+                config.Settings.RequireSignatureMatch,
+                config.Settings.MaxArchiveSizeMb);
 
             var validation = _validator.Validate(request.FilePath, options);
             if (!validation.IsValid)

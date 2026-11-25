@@ -16,6 +16,7 @@ public sealed class SettingsViewModel : ObservableObject
     private double _stabilitySeconds;
     private int _dedupeWindowSeconds;
     private int _maxFileSizeMb;
+    private int _maxArchiveSizeMb;
     private int _logRetentionDays;
     private string _notice = string.Empty;
 
@@ -91,6 +92,12 @@ public sealed class SettingsViewModel : ObservableObject
         set => Set(ref _maxFileSizeMb, value);
     }
 
+    public int MaxArchiveSizeMb
+    {
+        get => _maxArchiveSizeMb;
+        set => Set(ref _maxArchiveSizeMb, value);
+    }
+
     public int LogRetentionDays
     {
         get => _logRetentionDays;
@@ -114,6 +121,7 @@ public sealed class SettingsViewModel : ObservableObject
         StabilitySeconds = settings.StabilitySeconds;
         DedupeWindowSeconds = settings.DedupeWindowSeconds;
         MaxFileSizeMb = settings.MaxFileSizeMb;
+        MaxArchiveSizeMb = settings.MaxArchiveSizeMb;
         LogRetentionDays = settings.LogRetentionDays;
         StartWithWindows = new AutoStartManager().IsEnabled || settings.StartWithWindows;
         Notice = string.Empty;
@@ -130,6 +138,7 @@ public sealed class SettingsViewModel : ObservableObject
         settings.StabilitySeconds = StabilitySeconds;
         settings.DedupeWindowSeconds = DedupeWindowSeconds;
         settings.MaxFileSizeMb = MaxFileSizeMb;
+        settings.MaxArchiveSizeMb = MaxArchiveSizeMb;
         settings.LogRetentionDays = LogRetentionDays;
 
         var registryMessage = string.Empty;

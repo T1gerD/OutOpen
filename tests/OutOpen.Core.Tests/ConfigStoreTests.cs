@@ -82,15 +82,33 @@ public class ConfigStoreTests
         var store = new ConfigStore(dir.Path);
         var config = store.LoadOrCreate();
         config.Settings.MaxFileSizeMb = 999_999;
+        config.Settings.MaxArchiveSizeMb = -3;
         config.Settings.DedupeWindowSeconds = -5;
         config.Settings.StabilitySeconds = 600;
 
         store.Save(config);
         var reloaded = new ConfigStore(dir.Path).LoadOrCreate();
 
-        Assert.Equal(10240, reloaded.Settings.MaxFileSizeMb);
+        Assert.Equal(102400, reloaded.Settings.MaxFileSizeMb);
+        Assert.Equal(0, reloaded.Settings.MaxArchiveSizeMb);
         Assert.Equal(0, reloaded.Settings.DedupeWindowSeconds);
         Assert.Equal(60, reloaded.Settings.StabilitySeconds);
+    }
+
+    [Fact]
+    public void Version1_config_migrates_archives_to_external_open()
+    {
+        using var dir = new TempDir();
+        var store = new ConfigStore(dir.Path);
+        var defaults = ConfigDefaults.Create();
+        defaults.Version = 1;
+        defaults.Extensions[".zip"].Action = Core.Models.OpenAction.Skip;
+        store.Save(defaults);
+
+        var reloaded = new ConfigStore(dir.Path).LoadOrCreate();
+
+        Assert.Equal(OutOpenConfig.CurrentVersion, reloaded.Version);
+        Assert.Equal(Core.Models.OpenAction.ExternalOpen, reloaded.Extensions[".zip"].Action);
     }
 
     [Fact]

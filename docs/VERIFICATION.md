@@ -194,6 +194,27 @@ MaxInk 被拉起并打开该文件；概览页「处理记录」+1，事件页�
 - 本机验证：清空 iconcache 并重启 Explorer 后，用 `SHGetFileInfo` 提取桌面快捷方式、开始菜单三个快捷方式、`OutOpen.exe`、`unins000.exe`、`setup.exe` 的图标均为新图标（截图 `docs/screenshots/20-installer-welcome.png`）；
 - 若个别机器仍显示旧图，删除 `%LOCALAPPDATA%\IconCache.db` 与 `%LOCALAPPDATA%\Microsoft\Windows\Explorer\iconcache_*.db` 后重启 Explorer，或注销重登一次。
 
+## 6.6 大压缩包与网盘下载（0.1.5）
+
+问题：网盘里的超大压缩包会被 512 MB 上限拦下；而且压缩包原来默认「不接管」，用户只能退回网盘的在线解压/预览。
+
+改动：
+
+- 大小上限拆成两档：`MaxFileSizeMb`（普通文件，默认 512）与 `MaxArchiveSizeMb`（zip／7z／rar，默认 8192），两者都支持 `0 = 不限制`，范围 0–102400；
+- 压缩包默认动作由「不接管」改为「外部打开」；配置版本升到 2，旧配置里的 zip／7z／rar 若为跳过会自动迁移为外部打开（用户仍可在「文件规则」里改回）；
+- zip 额外做完整性校验：在文件尾部 64 KB 内查找 EOCD（`PK\x05\x06`），没有则判为 `IncompleteArchive`，避免把下载中的压缩包交给解压软件；
+- 设置页新增「压缩包上限（MB）」，「普通文件上限」同步支持 0；
+- 命令行 `outopen check <file>` 使用同一套规则。
+
+测试：`dotnet test` **92 通过**（新增压缩包独立上限、超过压缩包上限、0 不限制、zip 缺目录记录、zip 完整通过、旧配置迁移等用例）。
+
+实测：
+
+1. 生成 700 MB 的合成 zip（尾部带 EOCD），`outopen check` 输出「完整性校验：通过」「规则结论：ExternalOpen — ZIP 压缩包 的默认策略：外部打开」「查看器：Available — Bandizip」；
+2. 把该文件放进夸克自定义下载目录（`C:\Users\33502\Documents\QuarkCustom`）并启用夸克来源，日志记录：
+   `12:21:14.160 [pipeline] 已打开：quark %USERPROFILE%\Documents\QuarkCustom\OutOpen-big-archive-check2.zip（pid 20344，系统默认程序）`
+   Bandizip 实际启动；事件页截图见 `docs/screenshots/32-cloud-archive.png`。
+
 ## 7. 13 条验收对照
 
 | # | 计划书验收项 | 状态 | 证据 |

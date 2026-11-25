@@ -12,7 +12,8 @@ public enum FileProblem
     AccessDenied,
     InUse,
     Unstable,
-    SignatureMismatch
+    SignatureMismatch,
+    IncompleteArchive
 }
 
 public sealed record FileProblemInfo(FileProblem Problem, string Message)

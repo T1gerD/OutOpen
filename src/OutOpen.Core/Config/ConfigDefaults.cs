@@ -6,7 +6,7 @@ namespace OutOpen.Core.Config;
 public static class ConfigDefaults
 {
     public static OpenAction DefaultActionFor(FileCategory category) =>
-        category is FileCategory.Image or FileCategory.Archive ? OpenAction.Skip : OpenAction.ExternalOpen;
+        category is FileCategory.Image ? OpenAction.Skip : OpenAction.ExternalOpen;
 
     public static OutOpenConfig Create()
     {

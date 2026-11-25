@@ -175,7 +175,8 @@ internal static class Program
         var options = new FileValidationOptions(
             host.Config.Settings.StabilitySeconds,
             host.Config.Settings.MaxFileSizeMb,
-            host.Config.Settings.RequireSignatureMatch);
+            host.Config.Settings.RequireSignatureMatch,
+            host.Config.Settings.MaxArchiveSizeMb);
         var report = validator.Validate(path, options);
         Console.WriteLine("完整性校验：" + (report.IsValid ? "通过" : "未通过 — " + report.Summary));
         foreach (var problem in report.Problems)

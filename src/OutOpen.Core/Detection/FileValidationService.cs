@@ -1,17 +1,22 @@
 using System.Diagnostics;
 using System.IO;
+using OutOpen.Core.Catalog;
 using OutOpen.Core.Models;
 
 namespace OutOpen.Core.Detection;
 
 /// <summary>文件校验选项。</summary>
 /// <param name="StabilitySeconds">需要保持不变的秒数。</param>
-/// <param name="MaxFileSizeMb">允许接管的文件大小上限（MB）。</param>
+/// <param name="MaxFileSizeMb">普通文件允许接管的大小上限（MB），0 表示不限制。</param>
 /// <param name="RequireSignatureMatch">是否要求文件头签名与扩展名一致。</param>
+/// <param name="MaxArchiveSizeMb">压缩包单独的大小上限（MB），0 表示不限制。</param>
+/// <param name="VerifyArchiveCompleteness">是否对 zip 检查中央目录结尾记录，避免打开未下载完的压缩包。</param>
 public sealed record FileValidationOptions(
     double StabilitySeconds = 2.0,
     int MaxFileSizeMb = 512,
-    bool RequireSignatureMatch = false);
+    bool RequireSignatureMatch = false,
+    int MaxArchiveSizeMb = 8192,
+    bool VerifyArchiveCompleteness = true);
 
 /// <summary>文件快照：大小与最后写入时间。</summary>
 public readonly record struct FileSnapshot(long SizeBytes, DateTimeOffset LastWriteTime);
@@ -65,6 +70,10 @@ public sealed class FileValidationService
         var info = new FileInfo(filePath);
         long size = 0;
         DateTimeOffset lastWrite = DateTimeOffset.MinValue;
+        var extension = Path.GetExtension(filePath);
+        var category = SupportedTypes.Find(extension)?.Category;
+        var isArchive = category == FileCategory.Archive;
+        var sizeLimitMb = isArchive ? options.MaxArchiveSizeMb : options.MaxFileSizeMb;
         try
         {
             size = info.Length;
@@ -73,9 +82,12 @@ public sealed class FileValidationService
             {
                 problems.Add(new FileProblemInfo(FileProblem.EmptyFile, "文件为空（0 字节），可能尚未写入完成"));
             }
-            else if (size > (long)options.MaxFileSizeMb * 1024 * 1024)
+            else if (sizeLimitMb > 0 && size > (long)sizeLimitMb * 1024 * 1024)
             {
-                problems.Add(new FileProblemInfo(FileProblem.TooLarge, $"文件超过 {options.MaxFileSizeMb} MB 上限，未接管"));
+                var label = isArchive ? "压缩包" : "文件";
+                problems.Add(new FileProblemInfo(
+                    FileProblem.TooLarge,
+                    $"{label}超过 {sizeLimitMb} MB 上限，未接管（可在「设置」里调大，或设为 0 不限制）"));
             }
         }
         catch (UnauthorizedAccessException)
@@ -105,6 +117,18 @@ public sealed class FileValidationService
                 problems.Add(new FileProblemInfo(
                     FileProblem.SignatureMismatch,
                     $"文件内容与扩展名不一致（扩展名 {type.Extension}，实际签名 {type.SignatureDisplay}）"));
+            }
+
+            // zip 的目录记录写在文件尾部：下载到一半时文件头合法、尾部却还没有 EOCD。
+            if (problems.Count == 0
+                && options.VerifyArchiveCompleteness
+                && isArchive
+                && string.Equals(type.Extension, ".zip", StringComparison.OrdinalIgnoreCase)
+                && !HasZipEndOfCentralDirectory(filePath, size))
+            {
+                problems.Add(new FileProblemInfo(
+                    FileProblem.IncompleteArchive,
+                    "压缩包缺少目录结尾记录，可能仍在下载或已损坏"));
             }
         }
 
@@ -228,6 +252,56 @@ public sealed class FileValidationService
         catch (Exception ex)
         {
             return new FileProblemInfo(FileProblem.InUse, "无法读取文件：" + ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// 检查 zip 尾部是否存在 EOCD（PK\x05\x06）。下载中的 zip 通常只有文件头，没有目录记录。
+    /// 读取失败时按“无法判断”处理，返回 true 交给后续步骤，避免误拦。
+    /// </summary>
+    private static bool HasZipEndOfCentralDirectory(string filePath, long size)
+    {
+        const int maxTail = 66 * 1024;
+        var length = (int)Math.Min(size, maxTail);
+        if (length < 22)
+        {
+            return false;
+        }
+
+        var buffer = new byte[length];
+        try
+        {
+            using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            stream.Seek(-length, SeekOrigin.End);
+            var read = 0;
+            while (read < length)
+            {
+                var n = stream.Read(buffer, read, length - read);
+                if (n <= 0)
+                {
+                    break;
+                }
+
+                read += n;
+            }
+
+            for (var i = 0; i <= read - 4; i++)
+            {
+                if (buffer[i] == 0x50 && buffer[i + 1] == 0x4B && buffer[i + 2] == 0x05 && buffer[i + 3] == 0x06)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        catch (IOException)
+        {
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return true;
         }
     }
 }

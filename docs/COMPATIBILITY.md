@@ -58,9 +58,9 @@
 | `.jpg` / `.jpeg` | JPEG 图片 | Image | `image/jpeg` | 不接管 |
 | `.png` | PNG 图片 | Image | `image/png` | 不接管 |
 | `.gif` | GIF 图片 | Image | `image/gif` | 不接管 |
-| `.zip` | ZIP 压缩包 | Archive | `application/zip` | 不接管 |
-| `.7z` | 7-Zip 压缩包 | Archive | `application/x-7z-compressed` | 不接管 |
-| `.rar` | RAR 压缩包 | Archive | `application/vnd.rar` | 不接管 |
+| `.zip` | ZIP 压缩包 | Archive | `application/zip` | 外部打开（zip 会校验尾部目录记录） |
+| `.7z` | 7-Zip 压缩包 | Archive | `application/x-7z-compressed` | 外部打开（上限默认 8 GB） |
+| `.rar` | RAR 压缩包 | Archive | `application/vnd.rar` | 外部打开（上限默认 8 GB） |
 
 签名识别覆盖：PDF（`%PDF`）、ZIP/OOXML（`PK\x03\x04`）、OLE（`D0CF11E0A1B11AE1`）、RAR（`Rar!\x1A\x07`）、7Z（`37 7A BC AF 27 1C`）、JPEG（`FF D8 FF`）、PNG（`89 50 4E 47 0D 0A 1A 0A`）、GIF（`GIF87a/GIF89a`）。
 

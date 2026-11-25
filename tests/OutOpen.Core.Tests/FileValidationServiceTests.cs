@@ -66,12 +66,91 @@ public class FileValidationServiceTests
     public void Oversized_file_is_invalid()
     {
         using var dir = new TempDir();
-        var path = dir.Write("big.pdf", SampleFiles.Pdf);
+        var path = dir.Write("big.pdf", MakeFile(2, 0x25, 0x50, 0x44, 0x46));
 
-        var report = _validator.Validate(path, new FileValidationOptions(MaxFileSizeMb: 0));
+        var report = _validator.Validate(path, new FileValidationOptions(MaxFileSizeMb: 1));
 
         Assert.False(report.IsValid);
         Assert.Contains(report.Problems, p => p.Problem == FileProblem.TooLarge);
+    }
+
+    [Fact]
+    public void Archive_uses_its_own_larger_limit()
+    {
+        using var dir = new TempDir();
+        var path = dir.Write("big.zip", MakeZip(2));
+
+        var report = _validator.Validate(path, new FileValidationOptions(MaxFileSizeMb: 1, MaxArchiveSizeMb: 4));
+
+        Assert.True(report.IsValid);
+    }
+
+    [Fact]
+    public void Archive_over_its_limit_is_invalid()
+    {
+        using var dir = new TempDir();
+        var path = dir.Write("big.zip", MakeZip(2));
+
+        var report = _validator.Validate(path, new FileValidationOptions(MaxFileSizeMb: 8, MaxArchiveSizeMb: 1));
+
+        Assert.False(report.IsValid);
+        Assert.Contains(report.Problems, p => p.Problem == FileProblem.TooLarge);
+    }
+
+    [Fact]
+    public void Zero_archive_limit_means_unlimited()
+    {
+        using var dir = new TempDir();
+        var path = dir.Write("big.zip", MakeZip(2));
+
+        var report = _validator.Validate(path, new FileValidationOptions(MaxFileSizeMb: 1, MaxArchiveSizeMb: 0));
+
+        Assert.True(report.IsValid);
+    }
+
+    [Fact]
+    public void Zip_without_central_directory_is_incomplete()
+    {
+        using var dir = new TempDir();
+        var path = dir.Write("partial.zip", SampleFiles.Zip);
+
+        var report = _validator.Validate(path, new FileValidationOptions());
+
+        Assert.False(report.IsValid);
+        Assert.Contains(report.Problems, p => p.Problem == FileProblem.IncompleteArchive);
+    }
+
+    [Fact]
+    public void Zip_with_end_record_passes()
+    {
+        using var dir = new TempDir();
+        var path = dir.Write("complete.zip", MakeZip(1));
+
+        var report = _validator.Validate(path, new FileValidationOptions());
+
+        Assert.True(report.IsValid);
+    }
+
+    private static byte[] MakeFile(int sizeMb, params byte[] header)
+    {
+        var bytes = new byte[sizeMb * 1024 * 1024];
+        header.CopyTo(bytes, 0);
+        return bytes;
+    }
+
+    private static byte[] MakeZip(int sizeMb)
+    {
+        var bytes = new byte[sizeMb * 1024 * 1024];
+        bytes[0] = 0x50;
+        bytes[1] = 0x4B;
+        bytes[2] = 0x03;
+        bytes[3] = 0x04;
+        var tail = bytes.Length - 22;
+        bytes[tail] = 0x50;
+        bytes[tail + 1] = 0x4B;
+        bytes[tail + 2] = 0x05;
+        bytes[tail + 3] = 0x06;
+        return bytes;
     }
 
     [Fact]

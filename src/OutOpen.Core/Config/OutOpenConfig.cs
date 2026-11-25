@@ -5,7 +5,7 @@ namespace OutOpen.Core.Config;
 /// <summary>OutOpen 的用户配置，以 JSON 保存在本地。</summary>
 public sealed class OutOpenConfig
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     public int Version { get; set; } = CurrentVersion;
 
@@ -35,8 +35,11 @@ public sealed class GeneralSettings
     /// <summary>同一文件在该秒数内重复到达时只处理一次。</summary>
     public int DedupeWindowSeconds { get; set; } = 8;
 
-    /// <summary>超过该大小的文件不接管。</summary>
+    /// <summary>普通文件（文档、图片等）超过该大小不接管；0 表示不限制。</summary>
     public int MaxFileSizeMb { get; set; } = 512;
+
+    /// <summary>压缩包（zip/7z/rar）单独的大小上限，默认 8 GB；0 表示不限制。</summary>
+    public int MaxArchiveSizeMb { get; set; } = 8192;
 
     /// <summary>要求文件签名与扩展名一致；不一致时按失败处理。</summary>
     public bool RequireSignatureMatch { get; set; }

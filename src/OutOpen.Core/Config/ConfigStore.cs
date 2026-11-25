@@ -2,6 +2,7 @@ using System.IO;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using OutOpen.Core.Catalog;
 using OutOpen.Core.Models;
 
 namespace OutOpen.Core.Config;
@@ -71,6 +72,20 @@ public sealed class ConfigStore
     public static bool Normalize(OutOpenConfig config)
     {
         var changed = false;
+
+        // v2：压缩包默认改为外部打开（此前为跳过），旧配置同步迁移一次。
+        if (config.Version < 2 && config.Extensions is not null)
+        {
+            foreach (var (extension, settings) in config.Extensions)
+            {
+                if (settings.Action == OpenAction.Skip
+                    && Catalog.SupportedTypes.Find(extension)?.Category == FileCategory.Archive)
+                {
+                    settings.Action = OpenAction.ExternalOpen;
+                    changed = true;
+                }
+            }
+        }
 
         if (config.Version != OutOpenConfig.CurrentVersion)
         {
@@ -230,7 +245,8 @@ public sealed class ConfigStore
 
         changed |= Update(settings.StabilitySeconds, Math.Clamp(settings.StabilitySeconds, 0.0, 60.0), v => settings.StabilitySeconds = v);
         changed |= Update(settings.DedupeWindowSeconds, Math.Clamp(settings.DedupeWindowSeconds, 0, 600), v => settings.DedupeWindowSeconds = v);
-        changed |= Update(settings.MaxFileSizeMb, Math.Clamp(settings.MaxFileSizeMb, 1, 10240), v => settings.MaxFileSizeMb = v);
+        changed |= Update(settings.MaxFileSizeMb, Math.Clamp(settings.MaxFileSizeMb, 0, 102400), v => settings.MaxFileSizeMb = v);
+        changed |= Update(settings.MaxArchiveSizeMb, Math.Clamp(settings.MaxArchiveSizeMb, 0, 102400), v => settings.MaxArchiveSizeMb = v);
         changed |= Update(settings.LogRetentionDays, Math.Clamp(settings.LogRetentionDays, 1, 365), v => settings.LogRetentionDays = v);
 
         return changed;
